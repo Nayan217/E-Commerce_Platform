@@ -55,31 +55,25 @@ const Checkout = () => {
     if (!user) return;
     setProcessing(true);
     try {
-      const orderNumber = `ORD-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
       const shippingAddress = { name: form.name, phone: form.phone, line1: form.line1, line2: form.line2, city: form.city, state: form.state, pin: form.pin, country: form.country };
 
-      const { data, error } = await supabase.from('orders').insert({
-        order_number: orderNumber,
-        user_id: user.id,
-        items: items.map(i => ({ product_id: i.productId, name: i.name, image: i.image, price: i.price, qty: i.qty, size: i.size, color: i.color })) as any,
-        status: 'paid',
-        payment_status: 'paid',
-        payment_method: 'card',
-        shipping_address: shippingAddress as any,
-        billing_address: (form.sameAsBilling ? shippingAddress : shippingAddress) as any,
-        subtotal,
-        tax,
-        shipping_cost: shippingCost,
-        total,
-        notes,
-        status_history: [{ status: 'pending', timestamp: new Date().toISOString() }, { status: 'paid', timestamp: new Date().toISOString() }] as any,
-      }).select('id').single();
+      const { data, error } = await supabase.functions.invoke('create-order', {
+        body: {
+          items: items.map(i => ({ product_id: i.productId, variant_sku: i.variantSku, qty: i.qty, size: i.size, color: i.color })),
+          shipping_address: shippingAddress,
+          billing_address: form.sameAsBilling ? shippingAddress : shippingAddress,
+          shipping_method: shippingMethod,
+          notes,
+          coupon_code: null,
+        },
+      });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Failed to place order');
+      if (data?.error) throw new Error(data.error);
 
       dispatch(clearCart());
       toast({ title: 'Order placed! ✓' });
-      navigate(`/order-success/${data.id}`);
+      navigate(`/order-success/${data.order_id}`);
     } catch (err: any) {
       toast({ title: err.message || 'Failed to place order', variant: 'destructive' });
     }
