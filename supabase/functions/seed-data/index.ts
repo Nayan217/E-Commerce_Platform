@@ -19,8 +19,16 @@ Deno.serve(async (req) => {
 
     const results: string[] = [];
 
-    // ── 1. Create test users ──────────────────────────────────────
+    // ── 0. Fix admin email confirmation ───────────────────────────
     const adminId = "0f56da34-4ea2-4ca9-8482-40b1fff0b46b"; // existing admin
+    const { error: adminFixErr } = await supabaseAdmin.auth.admin.updateUserById(adminId, {
+      email_confirm: true,
+      password: "Admin@1234",
+    });
+    if (!adminFixErr) results.push("Admin email confirmed & password set to Admin@1234");
+    else results.push(`Admin fix: ${adminFixErr.message}`);
+
+    // ── 1. Create test users ──────────────────────────────────────
 
     // Create customer1
     const { data: c1 } = await supabaseAdmin.auth.admin.createUser({
