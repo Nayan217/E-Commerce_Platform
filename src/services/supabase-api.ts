@@ -205,11 +205,12 @@ export const supabaseApi = {
     return data;
   },
 
-  async cancelOrder(orderId: string) {
+  async cancelOrder(orderId: string, userId: string) {
     const { error } = await supabase
       .from('orders')
       .update({ status: 'cancelled' })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .eq('user_id', userId);
     if (error) throw error;
   },
 
