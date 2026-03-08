@@ -310,4 +310,13 @@ export const supabaseApi = {
       .eq('id', orderId);
     if (error) throw error;
   },
+
+  async getActiveCoupons() {
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('code, discount_type, discount_value, min_order_amount')
+      .eq('is_active', true);
+    if (error) throw error;
+    return data || [];
+  },
 };

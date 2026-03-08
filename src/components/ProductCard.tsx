@@ -53,7 +53,7 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
             <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded">-{discount}%</span>
           )}
           
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setWishlisted(!wishlisted); }} className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-all hover:bg-background">
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id); }} className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-all hover:bg-background">
             <Heart className={`h-4 w-4 ${wishlisted ? 'fill-destructive text-destructive' : 'text-muted-foreground'}`} />
           </button>
           

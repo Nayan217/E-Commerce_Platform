@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Minus, Plus, Trash2, ShoppingBag, Tag } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, Tag, Copy, Ticket } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { selectCartItems, selectCartTotal, removeItem, updateQty, clearCart } from '@/store/cartSlice';
+import { supabaseApi } from '@/services/supabase-api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,12 @@ const Cart = () => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const [coupon, setCoupon] = useState('');
+
+  const { data: coupons } = useQuery({
+    queryKey: ['active-coupons'],
+    queryFn: supabaseApi.getActiveCoupons,
+    staleTime: 10 * 60 * 1000,
+  });
 
   // Prices stored are base; GST-inclusive total = base * 1.18
   const gstSubtotal = useMemo(() => Math.round(subtotal * 1.18), [subtotal]);
@@ -89,6 +97,35 @@ const Cart = () => {
                 </div>
                 <Button variant="outline" size="sm" onClick={() => toast({ title: 'Coupon will be applied at checkout', description: 'Proceed to checkout to use your coupon code.' })}>Apply</Button>
               </div>
+
+              {/* Available Coupons */}
+              {coupons && coupons.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Ticket className="h-3 w-3" /> Available Coupons
+                  </p>
+                  {coupons.map((c: any) => (
+                    <button
+                      key={c.code}
+                      onClick={() => {
+                        setCoupon(c.code);
+                        navigator.clipboard?.writeText(c.code);
+                        toast({ title: `${c.code} copied!` });
+                      }}
+                      className="w-full flex items-center justify-between p-2 rounded border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-primary">{c.code}</span>
+                        <span className="text-muted-foreground">
+                          {c.discount_type === 'percentage' ? `${c.discount_value}% off` : `₹${c.discount_value} off`}
+                          {c.min_order_amount > 0 && ` (min ₹${c.min_order_amount})`}
+                        </span>
+                      </div>
+                      <Copy className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <Button className="w-full" asChild>
                 <Link to="/checkout">Proceed to Checkout</Link>

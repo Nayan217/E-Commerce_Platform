@@ -1,0 +1,1 @@
+CREATE POLICY "Authenticated users can read active coupons" ON public.coupons FOR SELECT TO authenticated USING (is_active = true);
