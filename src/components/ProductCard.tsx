@@ -13,9 +13,10 @@ interface ProductCardProps {
 }
 
 const ProductCard = React.memo(({ product }: ProductCardProps) => {
-  const [wishlisted, setWishlisted] = useState(false);
   const dispatch = useAppDispatch();
   const { toast } = useToast();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const wishlisted = isWishlisted(product.id);
 
   const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
