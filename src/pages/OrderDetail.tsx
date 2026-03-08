@@ -34,7 +34,8 @@ const OrderDetail = () => {
 
   const cancellable = ['pending', 'paid'].includes(order.status);
   const currentStepIdx = statusSteps.indexOf(order.status);
-  const items = (order.items as any[]) || [];
+  const rawItems = order.items;
+  const items: any[] = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems) : []);
   const shipping = order.shipping_address as any;
 
   const handleCancel = async () => {
