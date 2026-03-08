@@ -39,7 +39,7 @@ const OrderDetail = () => {
 
   const handleCancel = async () => {
     try {
-      await supabaseApi.cancelOrder(order.id);
+      await supabaseApi.cancelOrder(order.id, user!.id);
       toast({ title: 'Order cancelled' });
       queryClient.invalidateQueries({ queryKey: ['order', id] });
     } catch {

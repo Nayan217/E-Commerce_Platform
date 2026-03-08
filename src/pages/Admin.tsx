@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LayoutDashboard, Package, ShoppingBag, Warehouse, Menu, TrendingUp, Users, Clock, AlertTriangle } from 'lucide-react';
 import { supabaseApi } from '@/services/supabase-api';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,8 +22,35 @@ const navItems = [
 
 const Admin = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const currentPath = location.pathname;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Server-side admin role verification
+  const { data: isServerAdmin, isLoading: adminCheckLoading } = useQuery({
+    queryKey: ['admin-role-check', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user!.id,
+        _role: 'admin',
+      });
+      if (error) return false;
+      return data === true;
+    },
+    enabled: !!user?.id,
+  });
+
+  if (adminCheckLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isServerAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <nav className={`${mobile ? '' : 'hidden lg:flex'} flex-col gap-1 w-56 p-4`}>
