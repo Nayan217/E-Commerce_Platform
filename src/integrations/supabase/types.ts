@@ -456,6 +456,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_coupon: {
+        Args: { _coupon_code: string; _order_subtotal: number }
+        Returns: {
+          coupon_id: string
+          discount_type: string
+          discount_value: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
