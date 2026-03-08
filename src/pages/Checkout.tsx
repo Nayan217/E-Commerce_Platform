@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, CreditCard, Check } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { selectCartItems, selectCartTotal, clearCart } from '@/store/cartSlice';
-import { selectUser } from '@/store/authSlice';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -23,7 +24,7 @@ const shippingMethods = [
 const Checkout = () => {
   const items = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartTotal);
-  const user = useAppSelector(selectUser);
+  const { user, profile } = useAuth();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,7 +36,7 @@ const Checkout = () => {
 
   const [form, setForm] = useState({
     email: user?.email || '',
-    name: user?.name || '',
+    name: profile?.full_name || '',
     phone: '',
     line1: '',
     line2: '',
@@ -51,12 +52,38 @@ const Checkout = () => {
   const total = useMemo(() => subtotal + shippingCost + tax, [subtotal, shippingCost, tax]);
 
   const handlePay = async () => {
+    if (!user) return;
     setProcessing(true);
-    // Simulate payment
-    await new Promise(r => setTimeout(r, 2000));
-    dispatch(clearCart());
-    toast({ title: 'Order placed! ✓', description: 'Thank you for your purchase.' });
-    navigate('/order-success/SF-' + Date.now());
+    try {
+      const orderNumber = `ORD-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
+      const shippingAddress = { name: form.name, phone: form.phone, line1: form.line1, line2: form.line2, city: form.city, state: form.state, pin: form.pin, country: form.country };
+
+      const { data, error } = await supabase.from('orders').insert({
+        order_number: orderNumber,
+        user_id: user.id,
+        items: items.map(i => ({ product_id: i.productId, name: i.name, image: i.image, price: i.price, qty: i.qty, size: i.size, color: i.color })) as any,
+        status: 'paid',
+        payment_status: 'paid',
+        payment_method: 'card',
+        shipping_address: shippingAddress as any,
+        billing_address: (form.sameAsBilling ? shippingAddress : shippingAddress) as any,
+        subtotal,
+        tax,
+        shipping_cost: shippingCost,
+        total,
+        notes,
+        status_history: [{ status: 'pending', timestamp: new Date().toISOString() }, { status: 'paid', timestamp: new Date().toISOString() }] as any,
+      }).select('id').single();
+
+      if (error) throw error;
+
+      dispatch(clearCart());
+      toast({ title: 'Order placed! ✓' });
+      navigate(`/order-success/${data.id}`);
+    } catch (err: any) {
+      toast({ title: err.message || 'Failed to place order', variant: 'destructive' });
+    }
+    setProcessing(false);
   };
 
   const updateForm = (key: string, value: string | boolean) => setForm(prev => ({ ...prev, [key]: value }));
@@ -67,7 +94,6 @@ const Checkout = () => {
       <div className="container mx-auto px-4 py-8 flex-1 max-w-4xl">
         <Breadcrumbs items={[{ label: 'Cart', href: '/cart' }, { label: 'Checkout' }]} />
 
-        {/* Steps */}
         <div className="flex items-center justify-center gap-4 mb-10">
           {['Contact & Shipping', 'Review Order', 'Payment'].map((label, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -80,7 +106,6 @@ const Checkout = () => {
           ))}
         </div>
 
-        {/* Step 1: Contact & Shipping */}
         {step === 1 && (
           <div className="max-w-lg mx-auto space-y-4">
             <h2 className="text-xl font-bold mb-4">Contact & Shipping</h2>
@@ -103,7 +128,6 @@ const Checkout = () => {
           </div>
         )}
 
-        {/* Step 2: Review */}
         {step === 2 && (
           <div className="max-w-lg mx-auto space-y-6">
             <h2 className="text-xl font-bold">Review Order</h2>
@@ -144,7 +168,6 @@ const Checkout = () => {
           </div>
         )}
 
-        {/* Step 3: Payment */}
         {step === 3 && (
           <div className="max-w-lg mx-auto space-y-6">
             <h2 className="text-xl font-bold">Payment</h2>
@@ -157,11 +180,6 @@ const Checkout = () => {
                 <div><Label>Expiry</Label><Input placeholder="MM/YY" /></div>
                 <div><Label>CVC</Label><Input placeholder="123" /></div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <img src="https://img.icons8.com/color/32/visa.png" alt="Visa" className="h-6" />
-                <img src="https://img.icons8.com/color/32/mastercard.png" alt="Mastercard" className="h-6" />
-                <img src="https://img.icons8.com/color/32/amex.png" alt="Amex" className="h-6" />
-              </div>
             </div>
 
             <label className="flex items-center gap-2 text-sm">
@@ -169,7 +187,6 @@ const Checkout = () => {
               Billing address same as shipping
             </label>
 
-            {/* Summary */}
             <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
               <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
               <div className="flex justify-between"><span>Shipping</span><span>{shippingCost === 0 ? 'Free' : `₹${shippingCost}`}</span></div>

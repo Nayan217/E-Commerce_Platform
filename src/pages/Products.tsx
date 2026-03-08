@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { X, SlidersHorizontal } from 'lucide-react';
-import { api, ProductFilters } from '@/services/api';
+import { supabaseApi, ProductFilters } from '@/services/supabase-api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard, { ProductCardSkeleton } from '@/components/ProductCard';
@@ -13,8 +13,6 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-
-const categories = ['Electronics', 'Clothing', 'Books', 'Home & Garden', 'Sports', 'Beauty'];
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,11 +41,12 @@ const Products = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', filters],
-    queryFn: () => api.getProducts(filters),
+    queryFn: () => supabaseApi.getProducts(filters),
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: brands } = useQuery({ queryKey: ['brands'], queryFn: api.getBrands, staleTime: 5 * 60 * 1000 });
+  const { data: brands } = useQuery({ queryKey: ['brands'], queryFn: supabaseApi.getBrands, staleTime: 5 * 60 * 1000 });
+  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: supabaseApi.getCategories, staleTime: 5 * 60 * 1000 });
 
   const updateParam = (key: string, value: string | string[] | null) => {
     const params = new URLSearchParams(searchParams);
@@ -75,20 +74,18 @@ const Products = () => {
 
   const FilterPanel = () => (
     <div className="space-y-6">
-      {/* Categories */}
       <div>
         <h3 className="font-semibold mb-3 text-sm">Category</h3>
         <div className="space-y-2">
-          {categories.map(c => (
-            <label key={c} className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={selectedCategories.includes(c)} onCheckedChange={() => toggleArrayParam('category', c)} />
-              {c}
+          {(categories || []).map(c => (
+            <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={selectedCategories.includes(c.name)} onCheckedChange={() => toggleArrayParam('category', c.name)} />
+              {c.name}
             </label>
           ))}
         </div>
       </div>
 
-      {/* Price */}
       <div>
         <h3 className="font-semibold mb-3 text-sm">Price Range</h3>
         <Slider min={0} max={100000} step={500} value={[minPrice, maxPrice]} onValueChange={([min, max]) => {
@@ -104,7 +101,6 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Brands */}
       <div>
         <h3 className="font-semibold mb-3 text-sm">Brand</h3>
         <div className="space-y-2">
@@ -117,7 +113,6 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Rating */}
       <div>
         <h3 className="font-semibold mb-3 text-sm">Rating</h3>
         <div className="space-y-2">
@@ -130,7 +125,6 @@ const Products = () => {
         </div>
       </div>
 
-      {/* In Stock */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold">In Stock Only</span>
         <Switch checked={inStock} onCheckedChange={v => updateParam('inStock', v ? 'true' : null)} />
@@ -145,14 +139,11 @@ const Products = () => {
         <Breadcrumbs items={[{ label: 'Products' }]} />
 
         <div className="flex gap-8">
-          {/* Desktop sidebar */}
           <aside className="hidden lg:block w-64 shrink-0">
             <FilterPanel />
           </aside>
 
-          {/* Main */}
           <div className="flex-1 min-w-0">
-            {/* Top bar */}
             <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
               <div className="flex items-center gap-2">
                 <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
@@ -184,7 +175,6 @@ const Products = () => {
               </Select>
             </div>
 
-            {/* Active filters */}
             {activeFilters.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {activeFilters.map((f, i) => (
@@ -197,7 +187,6 @@ const Products = () => {
               </div>
             )}
 
-            {/* Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {isLoading
                 ? Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)
@@ -205,7 +194,6 @@ const Products = () => {
               }
             </div>
 
-            {/* Pagination */}
             {data && data.totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-8">
                 {Array.from({ length: data.totalPages }, (_, i) => (

@@ -1,18 +1,17 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
-import { Product } from '@/types';
+import { SupabaseProduct } from '@/services/supabase-api';
 import { useAppDispatch } from '@/store';
 import { addItem } from '@/store/cartSlice';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProductCardProps {
-  product: Product;
+  product: SupabaseProduct;
 }
 
 const ProductCard = React.memo(({ product }: ProductCardProps) => {
-  const [imgIdx, setImgIdx] = useState(0);
   const [wishlisted, setWishlisted] = useState(false);
   const dispatch = useAppDispatch();
   const { toast } = useToast();
@@ -21,12 +20,13 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
     e.preventDefault();
     e.stopPropagation();
     const variant = product.variants[0];
+    if (!variant) return;
     dispatch(addItem({
       productId: product.id,
       variantSku: variant.sku,
       name: product.name,
-      image: product.images[0],
-      price: product.price,
+      image: product.images[0]?.url || '/placeholder.svg',
+      price: variant.price || product.price,
       qty: 1,
       stock: variant.stock,
       size: variant.size,
@@ -35,17 +35,15 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
     toast({ title: 'Added to cart ✓', description: product.name });
   }, [product, dispatch, toast]);
 
-  const isOnSale = product.comparePrice > product.price;
-  const discount = isOnSale ? Math.round((1 - product.price / product.comparePrice) * 100) : 0;
+  const isOnSale = product.compare_at_price != null && product.compare_at_price > product.price;
+  const discount = isOnSale ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
+  const imgUrl = product.images[0]?.url || '/placeholder.svg';
 
   return (
     <Link to={`/products/${product.slug}`} className="group block">
       <div className="relative overflow-hidden rounded-lg border border-border bg-card transition-all duration-200 hover:shadow-md">
-        {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-muted"
-          onMouseEnter={() => product.images.length > 1 && setImgIdx(1)}
-          onMouseLeave={() => setImgIdx(0)}>
-          <img src={product.images[imgIdx]} alt={product.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" width={600} height={600} />
+        <div className="relative aspect-square overflow-hidden bg-muted">
+          <img src={imgUrl} alt={product.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" width={600} height={600} />
           
           {isOnSale && (
             <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded">-{discount}%</span>
@@ -60,21 +58,20 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
           </button>
         </div>
 
-        {/* Info */}
         <div className="p-3">
           <p className="text-xs text-muted-foreground">{product.brand}</p>
           <h3 className="text-sm font-medium mt-0.5 line-clamp-1 group-hover:text-primary transition-colors">{product.name}</h3>
           <div className="flex items-center gap-1 mt-1">
             <Star className="h-3 w-3 fill-secondary text-secondary" />
-            <span className="text-xs font-medium">{product.rating}</span>
-            <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
+            <span className="text-xs font-medium">{product.rating_average}</span>
+            <span className="text-xs text-muted-foreground">({product.rating_count})</span>
           </div>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="font-semibold text-sm">₹{product.price.toLocaleString()}</span>
-            {isOnSale && <span className="text-xs text-muted-foreground line-through">₹{product.comparePrice.toLocaleString()}</span>}
+            {isOnSale && <span className="text-xs text-muted-foreground line-through">₹{product.compare_at_price!.toLocaleString()}</span>}
           </div>
-          {product.stock <= 5 && product.stock > 0 && <p className="text-xs text-secondary font-medium mt-1">Only {product.stock} left!</p>}
-          {product.stock === 0 && <p className="text-xs text-destructive font-medium mt-1">Out of Stock</p>}
+          {product.total_stock <= 5 && product.total_stock > 0 && <p className="text-xs text-secondary font-medium mt-1">Only {product.total_stock} left!</p>}
+          {product.total_stock === 0 && <p className="text-xs text-destructive font-medium mt-1">Out of Stock</p>}
         </div>
       </div>
     </Link>
