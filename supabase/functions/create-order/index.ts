@@ -206,19 +206,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // For now (no Stripe), mark as paid via admin client (server-side only)
-    await adminClient
-      .from("orders")
-      .update({
-        status: "paid",
-        payment_status: "paid",
-        status_history: [
-          { status: "pending", timestamp: new Date().toISOString() },
-          { status: "paid", timestamp: new Date().toISOString() },
-        ],
-      })
-      .eq("id", order.id);
-
     // Clear user cart
     await adminClient.from("carts").delete().eq("user_id", user.id);
 
