@@ -187,13 +187,8 @@ const Checkout = () => {
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>
               <Button onClick={handlePay} disabled={processing} className="flex-1">
-                <Lock className="h-4 w-4 mr-1" /> {processing ? 'Processing...' : `Pay ₹${total.toLocaleString()}`}
+                {processing ? 'Processing...' : `Place Order — ₹${total.toLocaleString()}`}
               </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> SSL Encrypted</span>
-              <span>PCI Compliant</span>
             </div>
           </div>
         )}
