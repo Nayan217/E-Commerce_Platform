@@ -51,6 +51,7 @@ const App = () => (
               <Route path="/account/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
               <Route path="/admin/products" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
