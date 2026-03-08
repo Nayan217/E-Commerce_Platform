@@ -16,15 +16,16 @@ const Cart = () => {
   const { toast } = useToast();
   const [coupon, setCoupon] = useState('');
 
-  const shipping = useMemo(() => (subtotal >= 999 ? 0 : 99), [subtotal]);
-  const tax = useMemo(() => Math.round(subtotal * 0.18), [subtotal]);
-  const total = useMemo(() => subtotal + shipping + tax, [subtotal, shipping, tax]);
+  // Prices stored are base; GST-inclusive total = base * 1.18
+  const gstSubtotal = useMemo(() => Math.round(subtotal * 1.18), [subtotal]);
+  const shipping = useMemo(() => (gstSubtotal >= 999 ? 0 : 99), [gstSubtotal]);
+  const total = useMemo(() => gstSubtotal + shipping, [gstSubtotal, shipping]);
 
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20 px-4">
           <ShoppingBag className="h-20 w-20 text-muted-foreground/20" />
           <h1 className="text-2xl font-bold">Your Cart is Empty</h1>
           <p className="text-muted-foreground">Looks like you haven't added anything yet.</p>
@@ -44,15 +45,15 @@ const Cart = () => {
           {/* Items */}
           <div className="space-y-4">
             {items.map(item => (
-              <div key={item.variantSku} className="flex gap-4 p-4 rounded-lg border border-border bg-card">
-                <img src={item.image} alt={item.name} className="w-20 h-20 rounded-md object-cover" loading="lazy" />
+              <div key={item.variantSku} className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-border bg-card">
+                <img src={item.image} alt={item.name} className="w-16 h-16 sm:w-20 sm:h-20 rounded-md object-cover" loading="lazy" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between">
-                    <div>
+                  <div className="flex justify-between gap-2">
+                    <div className="min-w-0">
                       <Link to={`/products`} className="font-medium text-sm hover:text-primary transition-colors line-clamp-1">{item.name}</Link>
                       <p className="text-xs text-muted-foreground mt-0.5">{item.size} / {item.color}</p>
                     </div>
-                    <p className="font-semibold text-sm">₹{(item.price * item.qty).toLocaleString()}</p>
+                    <p className="font-semibold text-sm shrink-0">₹{Math.round(item.price * item.qty * 1.18).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center border border-border rounded-md">
@@ -72,10 +73,10 @@ const Cart = () => {
             <div className="rounded-lg border border-border bg-card p-6 space-y-4">
               <h2 className="font-semibold text-lg">Order Summary</h2>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal (incl. GST)</span><span>₹{gstSubtotal.toLocaleString()}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{shipping === 0 ? <span className="text-success">Free</span> : `₹${shipping}`}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Tax (18% GST)</span><span>₹{tax.toLocaleString()}</span></div>
               </div>
+              <p className="text-[11px] text-muted-foreground">All prices are inclusive of 18% GST</p>
               <div className="border-t border-border pt-3 flex justify-between font-semibold">
                 <span>Total</span><span>₹{total.toLocaleString()}</span>
               </div>
@@ -86,7 +87,7 @@ const Cart = () => {
                   <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Coupon code" value={coupon} onChange={e => setCoupon(e.target.value)} className="pl-9" />
                 </div>
-                <Button variant="outline" size="sm" onClick={() => toast({ title: 'Invalid coupon code', variant: 'destructive' })}>Apply</Button>
+                <Button variant="outline" size="sm" onClick={() => toast({ title: 'Coupon will be applied at checkout', description: 'Proceed to checkout to use your coupon code.' })}>Apply</Button>
               </div>
 
               <Button className="w-full" asChild>

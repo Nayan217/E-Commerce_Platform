@@ -13,7 +13,8 @@ interface CartDrawerProps {
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose }) => {
   const items = useAppSelector(selectCartItems);
-  const total = useAppSelector(selectCartTotal);
+  const subtotal = useAppSelector(selectCartTotal);
+  const gstTotal = Math.round(subtotal * 1.18);
   const dispatch = useAppDispatch();
 
   return (
@@ -40,7 +41,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose }) => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium line-clamp-1">{item.name}</p>
                     <p className="text-xs text-muted-foreground">{item.size} / {item.color}</p>
-                    <p className="text-sm font-semibold mt-1">₹{item.price.toLocaleString()}</p>
+                    <p className="text-sm font-semibold mt-1">₹{Math.round(item.price * 1.18).toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground">incl. GST</p>
                     <div className="flex items-center gap-2 mt-2">
                       <button onClick={() => dispatch(updateQty({ variantSku: item.variantSku, qty: item.qty - 1 }))} className="h-6 w-6 rounded border border-border flex items-center justify-center hover:bg-accent transition-colors"><Minus className="h-3 w-3" /></button>
                       <span className="text-sm w-6 text-center">{item.qty}</span>
@@ -53,8 +55,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose }) => {
             </div>
             <div className="border-t border-border pt-4 space-y-3">
               <div className="flex justify-between text-sm font-semibold">
-                <span>Total</span>
-                <span>₹{total.toLocaleString()}</span>
+                <span>Total (incl. GST)</span>
+                <span>₹{gstTotal.toLocaleString()}</span>
               </div>
               <Button className="w-full" asChild onClick={onClose}>
                 <Link to="/cart">View Cart</Link>

@@ -115,6 +115,8 @@ const ProductDetail = () => {
   const categoryName = product.categories?.name || '';
   const allReviews = reviews || [];
   const ratingDist = [5, 4, 3, 2, 1].map(r => ({ rating: r, count: allReviews.filter((rev: any) => rev.rating === r).length }));
+  const gstPrice = Math.round(product.price * 1.18);
+  const gstCompare = product.compare_at_price ? Math.round(product.compare_at_price * 1.18) : null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -122,14 +124,14 @@ const ProductDetail = () => {
       <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[{ label: 'Products', href: '/products' }, { label: product.name }]} />
 
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-12">
           <div>
             <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-3">
               <img src={product.images[mainImg]?.url || '/placeholder.svg'} alt={product.name} className="h-full w-full object-cover" width={600} height={600} />
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               {product.images.map((img, i) => (
-                <button key={i} onClick={() => setMainImg(i)} className={`aspect-square rounded-md overflow-hidden border-2 transition-colors ${mainImg === i ? 'border-primary' : 'border-transparent hover:border-border'}`}>
+                <button key={i} onClick={() => setMainImg(i)} className={`aspect-square w-16 sm:w-20 shrink-0 rounded-md overflow-hidden border-2 transition-colors ${mainImg === i ? 'border-primary' : 'border-transparent hover:border-border'}`}>
                   <img src={img.url} alt="" className="h-full w-full object-cover" loading="lazy" width={150} height={150} />
                 </button>
               ))}
@@ -145,14 +147,15 @@ const ProductDetail = () => {
             </div>
 
             <div className="flex items-baseline gap-3 mt-4">
-              <span className="text-3xl font-bold">₹{product.price.toLocaleString()}</span>
-              {product.compare_at_price && (
+              <span className="text-3xl font-bold">₹{gstPrice.toLocaleString()}</span>
+              {gstCompare && (
                 <>
-                  <span className="text-lg text-muted-foreground line-through">₹{product.compare_at_price.toLocaleString()}</span>
-                  <span className="text-sm text-success font-semibold">{Math.round((1 - product.price / product.compare_at_price) * 100)}% off</span>
+                  <span className="text-lg text-muted-foreground line-through">₹{gstCompare.toLocaleString()}</span>
+                  <span className="text-sm text-success font-semibold">{Math.round((1 - product.price / product.compare_at_price!) * 100)}% off</span>
                 </>
               )}
             </div>
+            <p className="text-xs text-muted-foreground mt-0.5">Price inclusive of GST</p>
 
             <div className="mt-4">
               {stockStatus === 'in-stock' && <span className="inline-flex items-center gap-1 text-sm text-success font-medium"><Check className="h-4 w-4" /> In Stock</span>}
@@ -199,7 +202,7 @@ const ProductDetail = () => {
         </div>
 
         <Tabs defaultValue="description" className="mt-12">
-          <TabsList>
+          <TabsList className="w-full sm:w-auto flex overflow-x-auto">
             <TabsTrigger value="description">Description</TabsTrigger>
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
             <TabsTrigger value="reviews">Reviews ({allReviews.length})</TabsTrigger>
@@ -282,7 +285,7 @@ const ProductDetail = () => {
 
         <section className="mt-16">
           <h2 className="text-2xl font-bold mb-6">Related Products</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {relLoading
               ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
               : related?.map(p => <ProductCard key={p.id} product={p} />)

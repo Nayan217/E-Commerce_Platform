@@ -112,3 +112,13 @@
     display: none;
   }
 }
+
+/* Touch device detection: show elements on devices without hover */
+@media (hover: none) and (pointer: coarse) {
+  .touch-device\:opacity-100 {
+    opacity: 1 !important;
+  }
+  .touch-device\:translate-y-0 {
+    transform: translateY(0) !important;
+  }
+}

@@ -49,7 +49,8 @@ const Checkout = () => {
 
   const shippingCost = shippingMethods.find(m => m.id === shippingMethod)?.price || 0;
   const tax = useMemo(() => Math.round(subtotal * 0.18), [subtotal]);
-  const total = useMemo(() => subtotal + shippingCost + tax, [subtotal, shippingCost, tax]);
+  const gstSubtotal = useMemo(() => subtotal + tax, [subtotal, tax]);
+  const total = useMemo(() => gstSubtotal + shippingCost, [gstSubtotal, shippingCost]);
 
   const handlePay = async () => {
     if (!user) return;
@@ -88,14 +89,14 @@ const Checkout = () => {
       <div className="container mx-auto px-4 py-8 flex-1 max-w-4xl">
         <Breadcrumbs items={[{ label: 'Cart', href: '/cart' }, { label: 'Checkout' }]} />
 
-        <div className="flex items-center justify-center gap-4 mb-10">
-          {['Contact & Shipping', 'Review Order', 'Payment'].map((label, i) => (
-            <div key={i} className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-10">
+          {['Shipping', 'Review', 'Payment'].map((label, i) => (
+            <div key={i} className="flex items-center gap-1 sm:gap-2">
               <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step > i + 1 ? 'bg-success text-success-foreground' : step === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                 {step > i + 1 ? <Check className="h-4 w-4" /> : i + 1}
               </div>
-              <span className={`text-sm hidden sm:block ${step === i + 1 ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
-              {i < 2 && <div className="w-8 h-px bg-border hidden sm:block" />}
+              <span className={`text-xs sm:text-sm hidden xs:block ${step === i + 1 ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+              {i < 2 && <div className="w-4 sm:w-8 h-px bg-border" />}
             </div>
           ))}
         </div>
@@ -104,17 +105,17 @@ const Checkout = () => {
           <div className="max-w-lg mx-auto space-y-4">
             <h2 className="text-xl font-bold mb-4">Contact & Shipping</h2>
             <div><Label>Email</Label><Input value={form.email} onChange={e => updateForm('email', e.target.value)} type="email" required /></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>Full Name</Label><Input value={form.name} onChange={e => updateForm('name', e.target.value)} required /></div>
               <div><Label>Phone</Label><Input value={form.phone} onChange={e => updateForm('phone', e.target.value)} required /></div>
             </div>
             <div><Label>Address Line 1</Label><Input value={form.line1} onChange={e => updateForm('line1', e.target.value)} required /></div>
             <div><Label>Address Line 2</Label><Input value={form.line2} onChange={e => updateForm('line2', e.target.value)} /></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>City</Label><Input value={form.city} onChange={e => updateForm('city', e.target.value)} required /></div>
               <div><Label>State</Label><Input value={form.state} onChange={e => updateForm('state', e.target.value)} required /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>PIN Code</Label><Input value={form.pin} onChange={e => updateForm('pin', e.target.value)} required /></div>
               <div><Label>Country</Label><Input value={form.country} onChange={e => updateForm('country', e.target.value)} required /></div>
             </div>
@@ -129,11 +130,11 @@ const Checkout = () => {
               {items.map(item => (
                 <div key={item.variantSku} className="flex gap-3 p-3 border border-border rounded-lg">
                   <img src={item.image} alt={item.name} className="w-12 h-12 rounded object-cover" />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium line-clamp-1">{item.name}</p>
                     <p className="text-xs text-muted-foreground">{item.size}/{item.color} × {item.qty}</p>
                   </div>
-                  <p className="text-sm font-semibold">₹{(item.price * item.qty).toLocaleString()}</p>
+                  <p className="text-sm font-semibold shrink-0">₹{Math.round(item.price * item.qty * 1.18).toLocaleString()}</p>
                 </div>
               ))}
             </div>
@@ -178,9 +179,9 @@ const Checkout = () => {
             </label>
 
             <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
+              <div className="flex justify-between"><span>Subtotal (incl. GST)</span><span>₹{gstSubtotal.toLocaleString()}</span></div>
               <div className="flex justify-between"><span>Shipping</span><span>{shippingCost === 0 ? 'Free' : `₹${shippingCost}`}</span></div>
-              <div className="flex justify-between"><span>Tax (18% GST)</span><span>₹{tax.toLocaleString()}</span></div>
+              <p className="text-[11px] text-muted-foreground">All prices include 18% GST</p>
               <div className="flex justify-between font-bold text-base border-t border-border pt-2"><span>Total</span><span>₹{total.toLocaleString()}</span></div>
             </div>
 

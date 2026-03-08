@@ -6,13 +6,13 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package } from 'lucide-react';
+import { Package, Headphones } from 'lucide-react';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-secondary/20 text-secondary',
   paid: 'bg-primary/20 text-primary',
-  processing: 'bg-purple-100 text-purple-700',
-  shipped: 'bg-orange-100 text-orange-700',
+  processing: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  shipped: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
   delivered: 'bg-success/20 text-success',
   cancelled: 'bg-destructive/20 text-destructive',
 };
@@ -29,7 +29,12 @@ const Orders = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="container mx-auto px-4 py-8 flex-1">
-        <h1 className="text-2xl font-bold mb-8">My Orders</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h1 className="text-2xl font-bold">My Orders</h1>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/support"><Headphones className="h-4 w-4 mr-1" /> Need Help?</Link>
+          </Button>
+        </div>
 
         {isLoading ? (
           <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}</div>
@@ -43,16 +48,16 @@ const Orders = () => {
           <div className="space-y-4">
             {orders.map((order: any) => (
               <div key={order.id} className="border border-border rounded-lg bg-card p-4 md:p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
                   <div>
                     <p className="font-mono text-sm font-semibold">{order.order_number}</p>
                     <p className="text-xs text-muted-foreground mt-1">{new Date(order.created_at).toLocaleDateString()} · {(order.items as any[])?.length || 0} item(s)</p>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <span className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${statusColors[order.status] || ''}`}>{order.status}</span>
                     <span className="font-semibold">₹{Number(order.total).toLocaleString()}</span>
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`/account/orders/${order.id}`}>View Details</Link>
+                      <Link to={`/account/orders/${order.id}`}>View</Link>
                     </Button>
                   </div>
                 </div>

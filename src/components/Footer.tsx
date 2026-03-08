@@ -4,8 +4,8 @@ import { ShoppingCart } from 'lucide-react';
 const Footer = () => (
   <footer className="bg-card border-t border-border mt-16">
     <div className="container mx-auto px-4 py-12">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="col-span-2 md:col-span-1">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary mb-4">
             <ShoppingCart className="h-6 w-6" /> ShopFlow
           </Link>
@@ -32,6 +32,7 @@ const Footer = () => (
         <div>
           <h4 className="font-semibold mb-3">Support</h4>
           <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            <Link to="/support" className="hover:text-foreground transition-colors">Help Center</Link>
             <span>help@shopflow.com</span>
             <span>+91 98765 43210</span>
             <span>Mon–Sat, 9am–6pm IST</span>
@@ -39,7 +40,7 @@ const Footer = () => (
         </div>
       </div>
       <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} ShopFlow. All rights reserved.
+        © {new Date().getFullYear()} ShopFlow. All rights reserved. · All prices include GST.
       </div>
     </div>
   </footer>
