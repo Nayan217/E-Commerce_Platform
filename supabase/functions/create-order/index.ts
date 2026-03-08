@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
         items: validatedItems,
         status: "pending",
         payment_status: "unpaid",
-        payment_method: "card",
+        payment_method: "cod",
         shipping_address,
         billing_address: billing_address || shipping_address,
         subtotal,
@@ -205,19 +205,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // For now (no Stripe), mark as paid via admin client (server-side only)
-    await adminClient
-      .from("orders")
-      .update({
-        status: "paid",
-        payment_status: "paid",
-        status_history: [
-          { status: "pending", timestamp: new Date().toISOString() },
-          { status: "paid", timestamp: new Date().toISOString() },
-        ],
-      })
-      .eq("id", order.id);
 
     // Clear user cart
     await adminClient.from("carts").delete().eq("user_id", user.id);

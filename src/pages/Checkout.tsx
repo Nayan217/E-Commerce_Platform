@@ -164,16 +164,12 @@ const Checkout = () => {
 
         {step === 3 && (
           <div className="max-w-lg mx-auto space-y-6">
-            <h2 className="text-xl font-bold">Payment</h2>
-            <div className="border border-border rounded-lg p-6 space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CreditCard className="h-4 w-4" /> Credit / Debit Card
+            <h2 className="text-xl font-bold">Confirm & Place Order</h2>
+            <div className="border border-border rounded-lg p-6 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CreditCard className="h-4 w-4" /> Cash on Delivery
               </div>
-              <div><Label>Card Number</Label><Input placeholder="4242 4242 4242 4242" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Expiry</Label><Input placeholder="MM/YY" /></div>
-                <div><Label>CVC</Label><Input placeholder="123" /></div>
-              </div>
+              <p className="text-sm text-muted-foreground">Payment will be collected upon delivery. Online payment integration coming soon.</p>
             </div>
 
             <label className="flex items-center gap-2 text-sm">
@@ -191,13 +187,8 @@ const Checkout = () => {
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>
               <Button onClick={handlePay} disabled={processing} className="flex-1">
-                <Lock className="h-4 w-4 mr-1" /> {processing ? 'Processing...' : `Pay ₹${total.toLocaleString()}`}
+                {processing ? 'Processing...' : `Place Order — ₹${total.toLocaleString()}`}
               </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> SSL Encrypted</span>
-              <span>PCI Compliant</span>
             </div>
           </div>
         )}
