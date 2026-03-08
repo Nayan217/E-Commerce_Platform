@@ -40,7 +40,10 @@ const Register = () => {
     const { error: err } = await signUp(email, password, name);
     setLoading(false);
     if (err) { setError(err); return; }
-    toast({ title: 'Account created! Check your email to confirm.' });
+    toast({
+      title: 'Account created! 🎉',
+      description: 'Use code WELCOME30 for 30% off your first order!',
+    });
     navigate('/');
   };
 
@@ -75,6 +78,12 @@ const Register = () => {
             </label>
             <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Creating...' : 'Create Account'}</Button>
           </form>
+
+          {/* Welcome coupon banner */}
+          <div className="mt-6 p-4 rounded-lg bg-success/10 border border-success/20 text-center">
+            <p className="text-sm font-medium text-success">🎁 New user? Get 30% off!</p>
+            <p className="text-xs text-muted-foreground mt-1">Use code <span className="font-mono font-bold text-foreground">WELCOME30</span> at checkout</p>
+          </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             Already have an account? <Link to="/login" className="text-primary font-medium hover:underline">Login</Link>

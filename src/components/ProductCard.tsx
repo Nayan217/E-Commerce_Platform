@@ -38,6 +38,8 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
   const isOnSale = product.compare_at_price != null && product.compare_at_price > product.price;
   const discount = isOnSale ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
   const imgUrl = product.images[0]?.url || '/placeholder.svg';
+  const gstPrice = Math.round(product.price * 1.18);
+  const gstCompare = isOnSale ? Math.round(product.compare_at_price! * 1.18) : 0;
 
   return (
     <Link to={`/products/${product.slug}`} className="group block">
@@ -53,7 +55,8 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
             <Heart className={`h-4 w-4 ${wishlisted ? 'fill-destructive text-destructive' : 'text-muted-foreground'}`} />
           </button>
           
-          <button onClick={handleAddToCart} className="absolute bottom-2 left-2 right-2 bg-primary text-primary-foreground text-sm font-medium py-2 rounded-md opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 hover:bg-primary/90">
+          {/* Show on hover for desktop, always visible on touch devices */}
+          <button onClick={handleAddToCart} className="absolute bottom-2 left-2 right-2 bg-primary text-primary-foreground text-sm font-medium py-2 rounded-md opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 hover:bg-primary/90 touch-device:opacity-100 touch-device:translate-y-0">
             <ShoppingCart className="h-4 w-4" /> Add to Cart
           </button>
         </div>
@@ -67,9 +70,10 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
             <span className="text-xs text-muted-foreground">({product.rating_count})</span>
           </div>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="font-semibold text-sm">₹{product.price.toLocaleString()}</span>
-            {isOnSale && <span className="text-xs text-muted-foreground line-through">₹{product.compare_at_price!.toLocaleString()}</span>}
+            <span className="font-semibold text-sm">₹{gstPrice.toLocaleString()}</span>
+            {isOnSale && <span className="text-xs text-muted-foreground line-through">₹{gstCompare.toLocaleString()}</span>}
           </div>
+          <p className="text-[10px] text-muted-foreground">incl. GST</p>
           {product.total_stock <= 5 && product.total_stock > 0 && <p className="text-xs text-secondary font-medium mt-1">Only {product.total_stock} left!</p>}
           {product.total_stock === 0 && <p className="text-xs text-destructive font-medium mt-1">Out of Stock</p>}
         </div>

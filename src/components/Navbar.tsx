@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Heart, ShoppingCart, User, Menu, X, ChevronDown, LogOut, Package, LayoutDashboard } from 'lucide-react';
+import { Search, Heart, ShoppingCart, User, Menu, X, ChevronDown, LogOut, Package, LayoutDashboard, Headphones } from 'lucide-react';
 import { useAppSelector } from '@/store';
 import { selectCartCount } from '@/store/cartSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { supabaseApi, SupabaseProduct } from '@/services/supabase-api';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
+import { ThemeToggle } from './ThemeToggle';
 import CartDrawer from './CartDrawer';
 
 const Navbar = React.memo(() => {
@@ -60,10 +61,10 @@ const Navbar = React.memo(() => {
     <>
       <header className={`sticky top-0 z-50 w-full transition-all duration-200 ${scrolled ? 'bg-background/95 backdrop-blur-md shadow-sm' : 'bg-background'} border-b border-border`}>
         <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
+                <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -75,13 +76,16 @@ const Navbar = React.memo(() => {
                   {categories.map(c => (
                     <Link key={c} to={`/products?category=${encodeURIComponent(c)}`} className="px-3 py-2 rounded-lg hover:bg-accent text-sm text-muted-foreground">{c}</Link>
                   ))}
+                  <div className="border-t border-border mt-2 pt-2">
+                    <Link to="/support" className="px-3 py-2 rounded-lg hover:bg-accent text-sm font-medium flex items-center gap-2"><Headphones className="h-4 w-4" /> Support</Link>
+                  </div>
                 </nav>
               </SheetContent>
             </Sheet>
 
             <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary shrink-0">
               <ShoppingCart className="h-6 w-6" />
-              <span>ShopFlow</span>
+              <span className="hidden sm:inline">ShopFlow</span>
             </Link>
 
             <nav className="hidden lg:flex items-center gap-1">
@@ -99,13 +103,13 @@ const Navbar = React.memo(() => {
               <Link to="/products" className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent transition-colors">All Products</Link>
             </nav>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 sm:gap-1">
               <div ref={searchRef} className="relative">
                 <Button variant="ghost" size="icon" onClick={() => setSearchOpen(!searchOpen)}>
                   <Search className="h-5 w-5" />
                 </Button>
                 {searchOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-popover border border-border rounded-lg shadow-lg p-3 animate-fade-in">
+                  <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-16 sm:top-full sm:mt-2 sm:w-80 bg-popover border border-border rounded-lg shadow-lg p-3 animate-fade-in z-50">
                     <input
                       autoFocus
                       type="text"
@@ -131,7 +135,9 @@ const Navbar = React.memo(() => {
                 )}
               </div>
 
-              <Button variant="ghost" size="icon" asChild>
+              <ThemeToggle />
+
+              <Button variant="ghost" size="icon" asChild className="hidden sm:inline-flex">
                 <Link to="/products"><Heart className="h-5 w-5" /></Link>
               </Button>
 
@@ -150,12 +156,13 @@ const Navbar = React.memo(() => {
                     </div>
                   </Button>
                   {userMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-popover border border-border rounded-lg shadow-lg py-1 animate-fade-in">
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-popover border border-border rounded-lg shadow-lg py-1 animate-fade-in z-50">
                       <div className="px-4 py-2 border-b border-border">
-                        <p className="text-sm font-medium">{displayName}</p>
-                        <p className="text-xs text-muted-foreground">{user?.email}</p>
+                        <p className="text-sm font-medium truncate">{displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                       </div>
                       <Link to="/account/orders" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent transition-colors"><Package className="h-4 w-4" /> Orders</Link>
+                      <Link to="/support" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent transition-colors"><Headphones className="h-4 w-4" /> Support</Link>
                       {isAdmin && (
                         <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent transition-colors"><LayoutDashboard className="h-4 w-4" /> Admin</Link>
                       )}
@@ -165,7 +172,7 @@ const Navbar = React.memo(() => {
                 </div>
               ) : (
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to="/login"><User className="h-4 w-4 mr-1" /> Login</Link>
+                  <Link to="/login"><User className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Login</span></Link>
                 </Button>
               )}
             </div>
