@@ -139,33 +139,20 @@ Deno.serve(async (req) => {
     let appliedCoupon: string | null = null;
 
     if (coupon_code) {
-      const { data: coupon } = await adminClient
-        .from("coupons")
-        .select("*")
-        .eq("code", coupon_code.trim().toUpperCase())
-        .eq("is_active", true)
-        .maybeSingle();
+      const code = coupon_code.trim().toUpperCase();
+      const { data: couponResult } = await adminClient.rpc("apply_coupon", {
+        _coupon_code: code,
+        _order_subtotal: subtotal,
+      });
 
-      if (coupon) {
-        const now = new Date();
-        const notExpired = !coupon.expires_at || new Date(coupon.expires_at) > now;
-        const notMaxed = !coupon.max_uses || (coupon.used_count || 0) < coupon.max_uses;
-        const meetsMin = subtotal >= (coupon.min_order_amount || 0);
-
-        if (notExpired && notMaxed && meetsMin) {
-          if (coupon.discount_type === "percentage") {
-            discount = Math.round(subtotal * (coupon.discount_value / 100));
-          } else {
-            discount = Math.min(coupon.discount_value, subtotal);
-          }
-          appliedCoupon = coupon.code;
-
-          // Increment used_count
-          await adminClient
-            .from("coupons")
-            .update({ used_count: (coupon.used_count || 0) + 1 })
-            .eq("id", coupon.id);
+      if (couponResult && couponResult.length > 0) {
+        const c = couponResult[0];
+        if (c.discount_type === "percentage") {
+          discount = Math.round(subtotal * (c.discount_value / 100));
+        } else {
+          discount = Math.min(c.discount_value, subtotal);
         }
+        appliedCoupon = code;
       }
     }
 
