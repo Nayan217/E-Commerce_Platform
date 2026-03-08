@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { SupabaseProduct } from '@/services/supabase-api';
@@ -6,15 +6,17 @@ import { useAppDispatch } from '@/store';
 import { addItem } from '@/store/cartSlice';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useWishlist } from '@/hooks/useWishlist';
 
 interface ProductCardProps {
   product: SupabaseProduct;
 }
 
 const ProductCard = React.memo(({ product }: ProductCardProps) => {
-  const [wishlisted, setWishlisted] = useState(false);
   const dispatch = useAppDispatch();
   const { toast } = useToast();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const wishlisted = isWishlisted(product.id);
 
   const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,7 +53,7 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
             <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded">-{discount}%</span>
           )}
           
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setWishlisted(!wishlisted); }} className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-all hover:bg-background">
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id); }} className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-all hover:bg-background">
             <Heart className={`h-4 w-4 ${wishlisted ? 'fill-destructive text-destructive' : 'text-muted-foreground'}`} />
           </button>
           
