@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { LayoutDashboard, Package, ShoppingBag, Warehouse, Star, Settings, Menu, TrendingUp, Users, Clock, AlertTriangle } from 'lucide-react';
-import { api } from '@/services/api';
-import { products } from '@/data/mockData';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { LayoutDashboard, Package, ShoppingBag, Warehouse, Menu, TrendingUp, Users, Clock, AlertTriangle } from 'lucide-react';
+import { supabaseApi } from '@/services/supabase-api';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
   { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -36,14 +37,10 @@ const Admin = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-1">
-        {/* Desktop sidebar */}
         <aside className="hidden lg:flex border-r border-border bg-card">
           <Sidebar />
         </aside>
-
-        {/* Main */}
         <main className="flex-1 p-4 md:p-8">
-          {/* Mobile nav */}
           <div className="lg:hidden mb-4">
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
@@ -67,15 +64,15 @@ const Admin = () => {
 };
 
 const DashboardView = () => {
-  const { data: stats, isLoading } = useQuery({ queryKey: ['adminStats'], queryFn: api.getAdminStats });
+  const { data: stats, isLoading } = useQuery({ queryKey: ['adminStats'], queryFn: supabaseApi.getAdminStats });
 
   if (isLoading) return <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
 
   const kpis = [
-    { label: 'Total Revenue', value: `₹${stats?.totalRevenue.toLocaleString()}`, icon: TrendingUp, color: 'text-success' },
-    { label: 'Orders Today', value: stats?.ordersToday, icon: Package, color: 'text-primary' },
-    { label: 'New Users', value: stats?.newUsers, icon: Users, color: 'text-secondary' },
-    { label: 'Pending Orders', value: stats?.pendingOrders, icon: Clock, color: 'text-orange-500' },
+    { label: 'Total Revenue', value: `₹${stats?.totalRevenue?.toLocaleString() || 0}`, icon: TrendingUp, color: 'text-success' },
+    { label: 'Orders Today', value: stats?.ordersToday || 0, icon: Package, color: 'text-primary' },
+    { label: 'Total Users', value: stats?.newUsers || 0, icon: Users, color: 'text-secondary' },
+    { label: 'Pending Orders', value: stats?.pendingOrders || 0, icon: Clock, color: 'text-orange-500' },
   ];
 
   return (
@@ -96,89 +93,60 @@ const DashboardView = () => {
           </Card>
         ))}
       </div>
-
-      {/* Revenue chart placeholder */}
-      <Card className="mb-8">
-        <CardHeader><CardTitle className="text-lg">Revenue (Last 30 Days)</CardTitle></CardHeader>
-        <CardContent>
-          <div className="flex items-end gap-1 h-40">
-            {stats?.revenueData.map((d, i) => (
-              <div key={i} className="flex-1 bg-primary/20 hover:bg-primary/40 rounded-t transition-colors" style={{ height: `${(d.revenue / 20000) * 100}%` }} title={`${d.date}: ₹${d.revenue}`} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Top products */}
-      <Card>
-        <CardHeader><CardTitle className="text-lg">Top Products</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {stats?.topProducts.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground w-6">{i + 1}</span>
-                <img src={p.images[0]} alt={p.name} className="w-10 h-10 rounded object-cover" loading="lazy" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium line-clamp-1">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{p.soldCount} sold</p>
-                </div>
-                <span className="text-sm font-semibold">₹{p.price.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
 
 const ProductsView = () => {
   const [search, setSearch] = useState('');
-  const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase()));
+  const { data: products, isLoading } = useQuery({ queryKey: ['adminProducts'], queryFn: supabaseApi.getAdminProducts });
+
+  const filtered = (products || []).filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.slug.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Products</h1>
-        <Button asChild><Link to="/admin/products/new">Add Product</Link></Button>
       </div>
       <input type="text" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="w-full max-w-sm px-3 py-2 text-sm border border-input rounded-md bg-background mb-4 focus:outline-none focus:ring-2 focus:ring-ring" />
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left">
-              <th className="py-3 px-2">Image</th>
-              <th className="py-3 px-2">Name</th>
-              <th className="py-3 px-2 hidden md:table-cell">SKU</th>
-              <th className="py-3 px-2 hidden lg:table-cell">Category</th>
-              <th className="py-3 px-2">Price</th>
-              <th className="py-3 px-2 hidden md:table-cell">Stock</th>
-              <th className="py-3 px-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.slice(0, 20).map(p => (
-              <tr key={p.id} className="border-b border-border hover:bg-accent/50 transition-colors">
-                <td className="py-2 px-2"><img src={p.images[0]} alt="" className="w-10 h-10 rounded object-cover" loading="lazy" /></td>
-                <td className="py-2 px-2 font-medium">{p.name}</td>
-                <td className="py-2 px-2 hidden md:table-cell text-muted-foreground">{p.sku}</td>
-                <td className="py-2 px-2 hidden lg:table-cell text-muted-foreground">{p.category}</td>
-                <td className="py-2 px-2">₹{p.price.toLocaleString()}</td>
-                <td className="py-2 px-2 hidden md:table-cell">{p.stock <= 5 ? <span className="text-destructive">{p.stock}</span> : p.stock}</td>
-                <td className="py-2 px-2">
-                  <Button variant="ghost" size="sm" asChild><Link to={`/admin/products/${p.id}/edit`}>Edit</Link></Button>
-                </td>
+      {isLoading ? <Skeleton className="h-64" /> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th className="py-3 px-2">Image</th>
+                <th className="py-3 px-2">Name</th>
+                <th className="py-3 px-2 hidden lg:table-cell">Category</th>
+                <th className="py-3 px-2">Price</th>
+                <th className="py-3 px-2 hidden md:table-cell">Stock</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filtered.slice(0, 20).map(p => (
+                <tr key={p.id} className="border-b border-border hover:bg-accent/50 transition-colors">
+                  <td className="py-2 px-2"><img src={p.images[0]?.url || '/placeholder.svg'} alt="" className="w-10 h-10 rounded object-cover" loading="lazy" /></td>
+                  <td className="py-2 px-2 font-medium">{p.name}</td>
+                  <td className="py-2 px-2 hidden lg:table-cell text-muted-foreground">{p.categories?.name || ''}</td>
+                  <td className="py-2 px-2">₹{p.price.toLocaleString()}</td>
+                  <td className="py-2 px-2 hidden md:table-cell">{p.total_stock <= 5 ? <span className="text-destructive">{p.total_stock}</span> : p.total_stock}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
 
 const OrdersView = () => {
-  const { data: orders } = useQuery({ queryKey: ['orders'], queryFn: api.getOrders });
+  const { data: orders, isLoading } = useQuery({ queryKey: ['adminOrders'], queryFn: supabaseApi.getAdminOrders });
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const statusColors: Record<string, string> = {
     pending: 'bg-secondary/20 text-secondary',
     paid: 'bg-primary/20 text-primary',
@@ -188,39 +156,67 @@ const OrdersView = () => {
     cancelled: 'bg-destructive/20 text-destructive',
   };
 
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      await supabaseApi.updateOrderStatus(orderId, newStatus);
+      queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+      toast({ title: `Order updated to ${newStatus}` });
+    } catch {
+      toast({ title: 'Failed to update', variant: 'destructive' });
+    }
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Orders</h1>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left">
-              <th className="py-3 px-2">Order #</th>
-              <th className="py-3 px-2 hidden md:table-cell">Date</th>
-              <th className="py-3 px-2">Status</th>
-              <th className="py-3 px-2">Total</th>
-              <th className="py-3 px-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders?.map(o => (
-              <tr key={o.id} className="border-b border-border hover:bg-accent/50 transition-colors">
-                <td className="py-2 px-2 font-mono text-xs">{o.orderNumber}</td>
-                <td className="py-2 px-2 hidden md:table-cell text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</td>
-                <td className="py-2 px-2"><span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${statusColors[o.status]}`}>{o.status}</span></td>
-                <td className="py-2 px-2 font-semibold">₹{o.total.toLocaleString()}</td>
-                <td className="py-2 px-2"><Button variant="ghost" size="sm" asChild><Link to={`/account/orders/${o.id}`}>View</Link></Button></td>
+      {isLoading ? <Skeleton className="h-64" /> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th className="py-3 px-2">Order #</th>
+                <th className="py-3 px-2 hidden md:table-cell">Date</th>
+                <th className="py-3 px-2">Status</th>
+                <th className="py-3 px-2">Total</th>
+                <th className="py-3 px-2">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {(orders || []).map((o: any) => (
+                <tr key={o.id} className="border-b border-border hover:bg-accent/50 transition-colors">
+                  <td className="py-2 px-2 font-mono text-xs">{o.order_number}</td>
+                  <td className="py-2 px-2 hidden md:table-cell text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</td>
+                  <td className="py-2 px-2">
+                    <Select value={o.status} onValueChange={v => handleStatusChange(o.id, v)}>
+                      <SelectTrigger className="h-7 text-xs w-28">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => (
+                          <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="py-2 px-2 font-semibold">₹{Number(o.total).toLocaleString()}</td>
+                  <td className="py-2 px-2"><Button variant="ghost" size="sm" asChild><Link to={`/account/orders/${o.id}`}>View</Link></Button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
 
 const InventoryView = () => {
-  const lowStock = products.filter(p => p.stock <= 5);
+  const { data: products, isLoading } = useQuery({ queryKey: ['adminProducts'], queryFn: supabaseApi.getAdminProducts });
+  const allProducts = products || [];
+  const lowStock = allProducts.filter(p => p.total_stock <= 5);
+
+  if (isLoading) return <Skeleton className="h-64" />;
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Inventory</h1>
@@ -235,23 +231,21 @@ const InventoryView = () => {
           <thead>
             <tr className="border-b border-border text-left">
               <th className="py-3 px-2">Product</th>
-              <th className="py-3 px-2">SKU</th>
               <th className="py-3 px-2">Stock</th>
               <th className="py-3 px-2">Status</th>
             </tr>
           </thead>
           <tbody>
-            {products.map(p => (
+            {allProducts.map(p => (
               <tr key={p.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                 <td className="py-2 px-2 flex items-center gap-2">
-                  <img src={p.images[0]} alt="" className="w-8 h-8 rounded object-cover" loading="lazy" />
+                  <img src={p.images[0]?.url || '/placeholder.svg'} alt="" className="w-8 h-8 rounded object-cover" loading="lazy" />
                   <span className="font-medium line-clamp-1">{p.name}</span>
                 </td>
-                <td className="py-2 px-2 text-muted-foreground">{p.sku}</td>
-                <td className="py-2 px-2 font-semibold">{p.stock}</td>
+                <td className="py-2 px-2 font-semibold">{p.total_stock}</td>
                 <td className="py-2 px-2">
-                  {p.stock === 0 ? <span className="text-xs text-destructive font-medium">Out of Stock</span>
-                    : p.stock <= 5 ? <span className="text-xs text-secondary font-medium">Low Stock</span>
+                  {p.total_stock === 0 ? <span className="text-xs text-destructive font-medium">Out of Stock</span>
+                    : p.total_stock <= 5 ? <span className="text-xs text-secondary font-medium">Low Stock</span>
                     : <span className="text-xs text-success font-medium">In Stock</span>}
                 </td>
               </tr>
