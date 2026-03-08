@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAppDispatch } from '@/store';
-import { setCredentials } from '@/store/authSlice';
+import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,8 @@ const Register = () => {
   const [confirm, setConfirm] = useState('');
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState('');
-  const dispatch = useAppDispatch();
+  const [loading, setLoading] = useState(false);
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,7 +28,7 @@ const Register = () => {
     return { label: 'Strong', color: 'bg-success', width: '100%' };
   }, [password]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!name || !email || !password || !confirm) { setError('All fields are required'); return; }
@@ -36,8 +36,11 @@ const Register = () => {
     if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
     if (!terms) { setError('Please accept the terms'); return; }
 
-    dispatch(setCredentials({ id: 'user-' + Date.now(), name, email, role: 'user' }));
-    toast({ title: 'Account created!' });
+    setLoading(true);
+    const { error: err } = await signUp(email, password, name);
+    setLoading(false);
+    if (err) { setError(err); return; }
+    toast({ title: 'Account created! Check your email to confirm.' });
     navigate('/');
   };
 
@@ -70,7 +73,7 @@ const Register = () => {
               <Checkbox checked={terms} onCheckedChange={v => setTerms(v as boolean)} className="mt-0.5" />
               I agree to the <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
             </label>
-            <Button type="submit" className="w-full">Create Account</Button>
+            <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Creating...' : 'Create Account'}</Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
