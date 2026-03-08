@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { SupabaseProduct } from '@/services/supabase-api';
@@ -6,6 +6,7 @@ import { useAppDispatch } from '@/store';
 import { addItem } from '@/store/cartSlice';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useWishlist } from '@/hooks/useWishlist';
 
 interface ProductCardProps {
   product: SupabaseProduct;
